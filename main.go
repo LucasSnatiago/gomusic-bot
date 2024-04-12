@@ -4,24 +4,35 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
+	"github.com/LucasSnatiago/gomusic-bot/commands"
 	"github.com/LucasSnatiago/gomusic-bot/config"
+	"github.com/LucasSnatiago/gomusic-bot/music"
 	"github.com/bwmarrin/discordgo"
 )
 
+var BotConfig *config.Config
+
 func main() {
-	botConfig := config.ReadConfig()
-	if botConfig == nil {
+	BotConfig = config.ReadConfig()
+	if BotConfig == nil {
 		return
 	}
 
-	discord, err := discordgo.New("Bot " + botConfig.Token)
+	dg, err := discordgo.New("Bot " + BotConfig.Token)
 	if err != nil {
 		panic(err)
 	}
 
-	err = discord.Open()
+	dg.AddHandler(HandleCommands)
+	dg.AddHandler(ready)
+
+	// In this example, we only care about receiving message events.
+	dg.Identify.Intents = discordgo.IntentsGuildMessages | discordgo.IntentsGuildVoiceStates
+
+	err = dg.Open()
 	if err != nil {
 		panic(err)
 	}
@@ -33,6 +44,37 @@ func main() {
 	<-sc
 
 	// Cleanly close down the Discord session.
-	discord.Close()
+	dg.Close()
 	fmt.Println("\nPowering off bot.")
+}
+
+func ready(s *discordgo.Session, event *discordgo.Ready) {
+	// Set the playing status.
+	s.UpdateGameStatus(0, fmt.Sprintf("%shelp", BotConfig.BotPrefix))
+}
+
+func HandleCommands(s *discordgo.Session, m *discordgo.MessageCreate) {
+	// Ignore all messages sent by the bot itself
+	if m.Author.ID == s.State.User.ID {
+		return
+
+		// Ignore messages that are not sent for this bot
+	} else if !strings.HasPrefix(m.Content, BotConfig.BotPrefix) {
+		return
+
+	}
+
+	// Split message in the command and its arguments
+	message := strings.Replace(m.Content, BotConfig.BotPrefix, "", 1)
+	cmd_and_args := strings.Split(message, " ")
+
+	// All available commands
+	switch strings.ToLower(cmd_and_args[0]) {
+	case "ping":
+		commands.Ping(s, m)
+	case "play":
+		music.ConnectVoiceChannel(s, m)
+	case "echo":
+		// commands.Echo()
+	}
 }

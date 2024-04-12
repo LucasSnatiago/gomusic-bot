@@ -3,7 +3,6 @@ package config
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 )
@@ -14,7 +13,7 @@ const ConfigFile = "config.json"
 type Config struct {
 	Token     string `json:"Token"`
 	BotPrefix string `json:"BotPrefix"`
-	CargoAdm  string `json:"CargoAdm"`
+	OwnerID   string `json:"OwnerID"`
 }
 
 func ReadConfig() *Config {
@@ -23,10 +22,16 @@ func ReadConfig() *Config {
 	if _, err := os.Stat(ConfigFile); err == nil {
 		// Reading file and extracting values
 		var byteFile []byte
-		if byteFile, err = ioutil.ReadFile(ConfigFile); err != nil {
+		if byteFile, err = os.ReadFile(ConfigFile); err != nil {
 			log.Fatal("Error reading config file: ", err)
 		}
 		json.Unmarshal(byteFile, &configData)
+
+		// If the user did not add their token return error
+		if configData.Token == "" {
+			fmt.Println("Please provide your Bot Information in the config.json file!")
+			os.Exit(1)
+		}
 
 	} else if os.IsNotExist(err) {
 		// Creating config file
@@ -35,7 +40,7 @@ func ReadConfig() *Config {
 			fmt.Println("Error creating config json: ", err)
 		}
 
-		if err = ioutil.WriteFile(ConfigFile, jsonConfig, 0640); err != nil {
+		if err = os.WriteFile(ConfigFile, jsonConfig, 0640); err != nil {
 			fmt.Println("Error writing file on disk, check if you have the right permissions!", err)
 		}
 
