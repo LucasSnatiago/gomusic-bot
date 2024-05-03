@@ -11,7 +11,6 @@ func Ping(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 // Takes inbound audio and sends it right back out.
 func Echo(v *discordgo.VoiceConnection) {
-
 	recv := make(chan *discordgo.Packet, 2)
 	go dgvoice.ReceivePCM(v, recv)
 
@@ -22,7 +21,6 @@ func Echo(v *discordgo.VoiceConnection) {
 	defer v.Speaking(false)
 
 	for {
-
 		p, ok := <-recv
 		if !ok {
 			return

@@ -8,7 +8,6 @@ import (
 )
 
 func ConnectVoiceChannel(s *discordgo.Session, m *discordgo.MessageCreate) error {
-
 	// Find the channel that the message came from.
 	c, err := s.State.Channel(m.ChannelID)
 	if err != nil {
@@ -42,6 +41,8 @@ func ConnectVoiceChannel(s *discordgo.Session, m *discordgo.MessageCreate) error
 		log.Println(err)
 		return err
 	}
+	// Disconnect after finishing song
+	defer dgv.Disconnect()
 
 	dgv.Speaking(true)
 
@@ -52,8 +53,6 @@ func ConnectVoiceChannel(s *discordgo.Session, m *discordgo.MessageCreate) error
 
 	// Wait before leaving
 	time.Sleep(250 * time.Millisecond)
-
-	dgv.Disconnect()
 
 	return nil
 }
