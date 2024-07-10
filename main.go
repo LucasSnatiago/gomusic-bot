@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"os/signal"
 	"strings"
@@ -15,12 +16,14 @@ import (
 
 var BotConfig *config.Config
 
-func main() {
+func init() {
 	BotConfig = config.ReadConfig()
 	if BotConfig == nil {
-		return
+		log.Fatalf("Could not read config file")
 	}
+}
 
+func main() {
 	dg, err := discordgo.New("Bot " + BotConfig.Token)
 	if err != nil {
 		panic(err)
@@ -57,8 +60,7 @@ func HandleCommands(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if m.Author.ID == s.State.User.ID {
 		return
 
-		// Ignore messages that are not sent for this bot
-	} else if !strings.HasPrefix(m.Content, BotConfig.BotPrefix) {
+	} else if !strings.HasPrefix(m.Content, BotConfig.BotPrefix) { // Ignore messages that are not sent for this bot
 		return
 
 	}
