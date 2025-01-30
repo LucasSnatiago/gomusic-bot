@@ -21,6 +21,8 @@ func init() {
 	if BotConfig == nil {
 		log.Fatalf("Could not read config file")
 	}
+
+	music.SetupYtdlp()
 }
 
 func main() {
@@ -33,7 +35,7 @@ func main() {
 	dg.AddHandler(ready)
 
 	// In this example, we only care about receiving message events.
-	dg.Identify.Intents = discordgo.IntentsGuildMessages | discordgo.IntentsGuildVoiceStates
+	dg.Identify.Intents = discordgo.IntentsGuilds | discordgo.IntentsGuildMessages | discordgo.IntentsGuildVoiceStates
 
 	err = dg.Open()
 	if err != nil {
@@ -59,10 +61,11 @@ func HandleCommands(s *discordgo.Session, m *discordgo.MessageCreate) {
 	// Ignore all messages sent by the bot itself
 	if m.Author.ID == s.State.User.ID {
 		return
+	}
 
-	} else if !strings.HasPrefix(m.Content, BotConfig.BotPrefix) { // Ignore messages that are not sent for this bot
+	// Ignore all messages without the prefix
+	if !strings.HasPrefix(m.Content, BotConfig.BotPrefix) {
 		return
-
 	}
 
 	// Split message in the command and its arguments
@@ -74,8 +77,18 @@ func HandleCommands(s *discordgo.Session, m *discordgo.MessageCreate) {
 	case "ping":
 		commands.Ping(s, m)
 	case "play":
-		music.ConnectVoiceChannel(s, m)
+		url := strings.Join(cmd_and_args[1:], " ")
+		buf := music.YtGetBytes(url)
+		dvc, _ := music.ConnectVoiceChannel(s, m)
+		commands.PlaySong(buf, dvc)
+		music.DisconnectVoiceChat(dvc)
 	case "echo":
-		// commands.Echo()
+		dvc, _ := music.ConnectVoiceChannel(s, m)
+		commands.Echo(dvc)
+		music.DisconnectVoiceChat(dvc)
+	case "playtest":
+		dvc, _ := music.ConnectVoiceChannel(s, m)
+		commands.PlayTestSong(dvc)
+		music.DisconnectVoiceChat(dvc)
 	}
 }

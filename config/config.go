@@ -1,19 +1,20 @@
 package config
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"os"
+
+	"gopkg.in/yaml.v3"
 )
 
-const ConfigFile = "config.json"
+const ConfigFile = "config.yaml"
 
 // Struct to hold all necessary configs to run the bot
 type Config struct {
-	Token     string `json:"Token"`
-	BotPrefix string `json:"BotPrefix"`
-	OwnerID   string `json:"OwnerID"`
+	Token     string `yaml:"Token"`
+	BotPrefix string `yaml:"BotPrefix"`
+	OwnerID   string `yaml:"OwnerID"`
 }
 
 func ReadConfig() *Config {
@@ -25,22 +26,22 @@ func ReadConfig() *Config {
 		if byteFile, err = os.ReadFile(ConfigFile); err != nil {
 			log.Fatal("Error reading config file: ", err)
 		}
-		json.Unmarshal(byteFile, &configData)
+		yaml.Unmarshal(byteFile, &configData)
 
 		// If the user did not add their token return error
 		if configData.Token == "" {
-			fmt.Println("Please provide your Bot Information in the config.json file!")
+			fmt.Println("Please provide your Bot Information in the config.yaml file!")
 			os.Exit(1)
 		}
 
 	} else if os.IsNotExist(err) {
 		// Creating config file
-		var jsonConfig []byte
-		if jsonConfig, err = json.MarshalIndent(configData, "", " "); err != nil {
+		var yamlConfig []byte
+		if yamlConfig, err = yaml.Marshal(configData); err != nil {
 			fmt.Println("Error creating config json: ", err)
 		}
 
-		if err = os.WriteFile(ConfigFile, jsonConfig, 0640); err != nil {
+		if err = os.WriteFile(ConfigFile, yamlConfig, 0640); err != nil {
 			fmt.Println("Error writing file on disk, check if you have the right permissions!", err)
 		}
 
